@@ -1,4 +1,5 @@
 # Load necessary libraries
+rm(list=ls())  # Clear the environment
 library(ggplot2)
 library(dplyr)
 library(gridExtra)
@@ -14,11 +15,11 @@ library(ggrepel)
 
 # Load the data files
 set.seed(1234)
-tracks <- read.csv('E:/drxel_2024-spring/INFO-332/info332/transportation/tracks.csv', sep = ',')
-cities <- read.csv('E:/drxel_2024-spring/INFO-332/info332/transportation/cities.csv', sep = ',')
-lines <- read.csv('E:/drxel_2024-spring/INFO-332/info332/transportation/lines.csv', sep = ',')
-systems <- read.csv('E:/drxel_2024-spring/INFO-332/info332/transportation/systems.csv', sep = ',')
-stations <- read.csv('E:/drxel_2024-spring/INFO-332/info332/transportation/stations.csv', sep = ',')
+tracks <- read.csv('D:/transportation/transportation_visualization/transportation/tracks.csv', sep = ',')
+cities <- read.csv('D:/transportation/transportation_visualization/transportation/cities.csv', sep = ',')
+lines <- read.csv('D:/transportation/transportation_visualization/transportation/lines.csv', sep = ',')
+systems <- read.csv('D:/transportation/transportation_visualization/transportation/systems.csv', sep = ',')
+stations <- read.csv('D:/transportation/transportation_visualization/transportation/stations.csv', sep = ',')
 
 # Fixing the incorrect dates in the data
 fixDates <- function(x) {
@@ -113,9 +114,13 @@ makePlots <- function(currentDF) {
 # Custom color palette for Lines display
 mycols <- c("#A6CEE3", "#1F78B4", "#B2DF8A", "#33A02C", "#FB9A99", "#E31A1C", "#FDBF6F", "#FF7F00", "#CAB2D6", "#6A3D9A", "#B15928")
 
-# Analyzing all lines across cities
+print(class(lines))
 allCities <- sort(unique(lines$city_id))
+
+# Analyzing all lines across cities
+
 TOT <- data.frame(Long = double(), Lat = double(), ids = integer(), buildDATE = integer(), openingDATE = integer(), city = character(), country = character())
+
 
 for (i in 1:length(allCities)) {
   temp <- makeTracks(allCities[i])
@@ -139,9 +144,16 @@ tempo <- merge(tracks, lines, by = 'id')
 cities$city_id <- cities$id
 tempo <- merge(tempo, cities, by = 'city_id')
 
+
+
 # Group the tracks and stations
 all_tracks <- merge(tracks %>% select(line_id, length), tempo %>% select(country, name.y, id.x) %>% rename(line_id = id.x), by = 'line_id')
 all_stations <- merge(stations %>% select(line_id), tempo %>% select(country, name.y, id.x) %>% rename(line_id = id.x), by = 'line_id')
+
+
+
+
+
 
 # Analyze total length per tracks
 tot_length <- c()
@@ -177,6 +189,14 @@ for (i in 1:length(unique(all_stations$name.y))) {
 summary_stations <- data.frame(city = names, stations = tot_stations)
 summary_stations %>% ggplot(aes(x = reorder(city, stations), y = stations, fill = stations)) + geom_bar(stat = 'identity') + coord_flip() + theme_fivethirtyeight() + scale_fill_gradientn(name = '', colors = rev(brewer.pal(10, 'Spectral'))) + ggtitle("Number of stations per City")
 
+
+
+
+
+
+
+
+
 # Correlation analysis
 RES <- as.data.frame(merge(summary_tracks, summary_stations, by = 'city'))
 g2 <- ggplot(data = RES, aes(x = length, y = lines, fill = city)) + geom_point(aes(size = stations)) +
@@ -189,11 +209,18 @@ g2 <- ggplot(data = RES, aes(x = length, y = lines, fill = city)) + geom_point(a
   scale_fill_manual(values = colorRampPalette(mycols)(length(unique(RES$city))))
 g2 + guides(fill = FALSE) + xlab('total length of Transport System (km)') + ylab("Number of lines")
 
+
 ggplot(data = RES, aes(x = length, y = lines)) +
   geom_point(aes(size = stations)) +
   theme(legend.position = 'none') +
   geom_smooth(method = 'lm', color = '#F21A00', alpha = .25, size = .5, lty = 2) +
   theme_fivethirtyeight() + ggtitle('Number of stations vs. Total Length')
+
+
+
+
+
+
 
 # Map visualization
 cities_data <- data.frame(city = unique(RES$city))
@@ -224,6 +251,21 @@ world_map +
   geom_label_repel(data = RES, aes(x = long, y = lat, label = city), force = 5, alpha = .75, color = 'black') +
   ggtitle('Cities where data is available')
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # London: Transport system analysis
 londonData <- makeTracks(69)
 londonData$label <- ifelse(londonData$marker == 1, as.character(londonData$line), "")
@@ -247,6 +289,17 @@ ggplot(data = londonData, aes(x = Long, y = Lat, color = as.factor(line))) +
 # Visualization per built/opening date in London
 do.call(grid.arrange, c(makePlots(londonData), ncol = 2))
 
+
+
+
+
+
+
+
+
+
+
+
 # Visualization per system_id in London
 londonData <- as.data.frame(merge(lines %>% rename(line = id), londonData, by = 'line'))
 ggplot(data = londonData, aes(x = Long, y = Lat, color = as.factor(system_id))) +
@@ -257,12 +310,22 @@ ggplot(data = londonData, aes(x = Long, y = Lat, color = as.factor(system_id))) 
   facet_wrap(~system_id) +
   scale_color_manual(values = colorRampPalette(mycols)(length(unique(londonData$system_id))))
 
+
+
+
+
+
+
 # Lines length distribution in London
 ggplot(data = makeStats(69), aes(x = reorder(url_name, totLength), y = totLength, fill = totLength)) +
   geom_bar(stat = 'identity') +
   coord_flip() +
   theme_fivethirtyeight() +
   scale_fill_gradientn(name = 'km', colors = rev(brewer.pal(10, 'Spectral')))
+
+
+
+
 
 # Tokyo: Transport system analysis
 tokyoData <- makeTracks(114)
@@ -279,6 +342,14 @@ ggplot(data = tokyoData, aes(x = Long, y = Lat, color = as.factor(line))) +
 # Visualization per built/opening date in Tokyo
 do.call(grid.arrange, c(makePlots(tokyoData), ncol = 2))
 
+
+
+
+
+
+
+
+
 # Visualization per system_id in Tokyo
 tokyoData <- as.data.frame(merge(lines %>% rename(line = id), tokyoData, by = 'line'))
 ggplot(data = tokyoData, aes(x = Long, y = Lat, color = as.factor(system_id))) +
@@ -289,12 +360,28 @@ ggplot(data = tokyoData, aes(x = Long, y = Lat, color = as.factor(system_id))) +
   facet_wrap(~system_id) +
   scale_color_manual(values = colorRampPalette(mycols)(length(unique(tokyoData$system_id))))
 
+
+
+
+
+
+
 # Lines length distribution in Tokyo
-ggplot(data = makeStats(114), aes(x = reorder(url_name, totLength), y = totLength, fill = totLength)) +
+df <- makeStats(114)[1:50, ]
+
+# Adjust the plot
+ggplot(data = df, aes(x = reorder(url_name, totLength), y = totLength, fill = totLength)) +
   geom_bar(stat = 'identity') +
-  coord_flip() +
+  coord_flip() +  # Flips the coordinates to make labels horizontal
   theme_fivethirtyeight() +
-  scale_fill_gradientn(name = 'km', colors = rev(brewer.pal(10, 'Spectral')))
+  theme(axis.text.y = element_text(size = 8, angle = 0)) +  # Adjust text size and angle
+  scale_fill_gradientn(name = 'km', colors = rev(brewer.pal(10, 'Spectral'))) +
+  labs(y = NULL)  # Removes y-axis label for clarity
+
+
+
+
+
 
 # Beijing: Transport system analysis
 beijingData <- makeTracks(15)
@@ -309,6 +396,8 @@ ggplot(data = beijingData, aes(x = Long, y = Lat, color = as.factor(line))) +
   xlab('') + ylab('') + theme(legend.position = 'none') + ggtitle('Beijing Transport System by Lines') +
   scale_color_manual(values = colorRampPalette(mycols)(length(unique(beijingData$line))))
 
+
+
 # Visualization per built/opening date in Beijing
 do.call(grid.arrange, c(makePlots(beijingData), ncol = 2))
 
@@ -322,12 +411,19 @@ ggplot(data = beijingData, aes(x = Long, y = Lat, color = as.factor(system_id)))
   facet_wrap(~system_id) +
   scale_color_manual(values = colorRampPalette(mycols)(length(unique(beijingData$system_id))))
 
+
+
+
+
 # Lines length distribution in Beijing
 ggplot(data = makeStats(15), aes(x = reorder(url_name, totLength), y = totLength, fill = totLength)) +
   geom_bar(stat = 'identity') +
   coord_flip() +
   theme_fivethirtyeight() +
   scale_fill_gradientn(name = 'km', colors = rev(brewer.pal(10, 'Spectral')))
+
+
+
 
 # Paris: Transport system analysis
 parisData <- makeTracks(95)
@@ -341,6 +437,8 @@ ggplot(data = parisData, aes(x = Long, y = Lat, color = as.factor(line))) +
   theme(legend.position = 'top', legend.text = element_text(angle = 45, hjust = 1, size = 8)) +
   xlab('') + ylab('') + theme(legend.position = 'none') + ggtitle('Paris Transport System by Lines') +
   scale_color_manual(values = colorRampPalette(mycols)(length(unique(parisData$line))))
+
+
 
 # Visualization per built/opening date in Paris
 do.call(grid.arrange, c(makePlots(parisData), ncol = 2))
@@ -401,7 +499,7 @@ makeStations <- function(id_city) {
       tempo <- data.frame('Long' = cur_long, 'Lat' = cur_lat, 'line_id' = cur_id, 'buildDATE' = build, 'openingDATE = opening', 'name' = cur_name)
       res_2 <- rbind(res_2, tempo)
     }
-    if (exists('res_2') and nrow(res_2) > 0) {
+    if (exists('res_2') && nrow(res_2) > 0) {
       res <- rbind(res, res_2)
     }
   }
@@ -432,6 +530,11 @@ g1 + geom_point(data = londonStations, aes(x = Long, y = Lat), color = 'black', 
 # 'group_by(line_id, year)'
 # Calculate the sum (in case a given line had opened more than 1 section per year), then calculate the cumulated sum by 'line'
 # Plot overall increase and breakdown by lines
+
+
+
+
+
 
 # Function to analyze time evolution of lines per city
 makeLinesBreakdown <- function(id_city, city_name) {
@@ -467,6 +570,12 @@ makeLinesBreakdown <- function(id_city, city_name) {
 # Time evolution analysis for London
 do.call(grid.arrange, c(makeLinesBreakdown(69, "London"), ncol = 2))
 
+
+
+
+
+
+
 # Interesting findings for London:
 # Quick increase at the end of the 19th century (industrial revolution)
 # A 'plateau' starting around 1950. According to [wikipedia](https://en.wikipedia.org/wiki/History_of_London#1945.E2.80.932000):
@@ -475,6 +584,16 @@ do.call(grid.arrange, c(makeLinesBreakdown(69, "London"), ncol = 2))
 
 # Time evolution analysis for Tokyo
 do.call(grid.arrange, c(makeLinesBreakdown(114, "Tokyo"), ncol = 2))
+
+
+
+
+
+
+
+
+
+
 
 # Updated insights for Tokyo (as of '2017-08-05'):
 # Quick increase during the pre WW-II era (~1925)
